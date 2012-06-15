@@ -77,7 +77,7 @@ parse_object () {
 }
 
 parse_value () {
-  local jpath="${1:+$1$delim}$2"
+  local jpath="${1:+$1$pathsep}$2"
   case "$token" in
     '{') parse_object "$jpath" ;;
     '[') parse_array  "$jpath" ;;
@@ -85,7 +85,7 @@ parse_value () {
     ''|[^0-9]) throw "EXPECTED value GOT ${token:-EOF}" ;;
     *) value=$token ;;
   esac
-  printf "$left%s$right\t%s\n" "$jpath" "$value"
+  printf "$left%s$right$delim%s\n" "$jpath" "$value"
 }
 
 parse () {
@@ -101,10 +101,11 @@ parse () {
 if [ $0 = $BASH_SOURCE ];
 then
   # Usage example:
-  # cat json | ./JSON.sh --delimiter "|" --bracket "()" --strip-quotes
-  #
+  # echo '{"name":"apple","properties":{"color":"red","round":"true"}}' |
+  #   ./JSON.sh --delimiter "=" --bracket "()" --strip-quotes --pathsep "/"
   # Default options
-  delim=","
+  delim="\t"
+  pathsep=","
   left="["
   right="]"
   strip_quotes="false"
@@ -113,11 +114,11 @@ then
     case "$1" in
       -d|--delimiter) shift; delim="$1" ;;
       -b|--bracket) shift; left="${1:0:1}"; right="${1:${#1}-1:1}" ;;
+      -p|--path-sep) shift; pathsep="$1" ;;
       --strip-quotes) strip_quotes="true" ;;
       *) echo "Skipping unrecognized option '$1'" >&2
     esac
     shift;
   done
-  echo "delim='$delim'"
   tokenize | parse
 fi
